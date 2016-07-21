@@ -14,7 +14,7 @@ def convolution(A, B):
     return C
 
 A=[1, 4, 2, 0, 2]
-B=[3, 1, 2]
+B=[3, 1, 2, 0, 0]
 print "Convolution:", convolution(A, B)
 
 # FFT transfers the coefficients of a polynomial A to a set of values for certain variables. 
@@ -54,8 +54,7 @@ def butterflyidrev(n):  # generate a binary index for butterfly network
 # print rev
 # print type(rev[3])
 
-def FFT(A):
-    logN = int(math.ceil(np.log2(len(A))))
+def FFT(A, logN):
     N = 2**logN
     ind = butterflyidrev(logN)
     A.extend([0] * (N - len(A)))
@@ -79,8 +78,7 @@ def FFT(A):
         A = copy.deepcopy(Aco)
     return Aco
 
-def revFFT(A):
-    logN = int(math.ceil(np.log2(len(A))))
+def revFFT(A, logN):
     N = 2**logN
     ind = butterflyidrev(logN)
     A.extend([0] * (N - len(A)))
@@ -89,6 +87,7 @@ def revFFT(A):
     interval = 2
     while N >= 1:
         N = N / 2
+        # print N, interval, subsec
         w = OofUrev(interval)
         for i in range(N):
             for j in range(subsec):
@@ -99,12 +98,31 @@ def revFFT(A):
                 else:
                     Aco[interval*i+j] = (A[interval*i+j] + w[j]*A[interval*i+subsec+j])
                     Aco[interval*i+subsec+j] = (A[interval*i+j] + w[j+subsec]*A[interval*i+subsec+j])
+                # print interval*i+j
         interval = interval * 2
         subsec = subsec * 2
         A = copy.deepcopy(Aco)
     for i in range(len(Aco)):
-        Aco[i] = Aco[i]/4.0
+        Aco[i] = Aco[i]/2.0**logN
     return Aco
 
-print "FFT:", FFT([1,0,1,-1])
-print "Inversed FFT:", revFFT([5,complex(4,-1),-1,complex(4,1)])
+print "FFT:", FFT([1,0,1,-1], 2)
+print "Inversed FFT:", revFFT([5,complex(4,-1),-1,complex(4,1)], 2)
+
+def convolution(A, B):
+    C = [0]*(len(A)+len(B)-1)
+    for i in range(len(C)):
+        for j in range(max(i-len(B)+1, 0) ,min(i+1, len(A))):
+            C[i] += A[j] * B[i-j]
+    return C
+
+A=[1, 4, 3, 5]
+B=[3, 1, 2]
+print "Convolution:", convolution(A, B)
+
+lenC = len(A)+len(B)-1
+indC = int(math.ceil(np.log2(lenC)))
+valA = FFT(A, indC)
+valB = FFT(B, indC)
+valC = map(lambda (a,b):a*b, zip(valA, valB))
+print "FFT:", revFFT(valC, indC)
